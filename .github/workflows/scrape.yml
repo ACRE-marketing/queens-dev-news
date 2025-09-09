@@ -1,12 +1,12 @@
 name: scrape-queens-dev-news
 
 on:
-  workflow_dispatch:        # 手动运行按钮
+  workflow_dispatch:          # 手动运行
   schedule:
-    - cron: '10 12 * * *'   # 每天 12:10 UTC ≈ 纽约早上 8:10
+    - cron: '10 12 * * *'     # 每天 12:10 UTC ≈ 纽约 08:10
 
 permissions:
-  contents: write           # 允许推送到仓库
+  contents: write             # 允许向仓库推送
 
 jobs:
   scrape:
@@ -30,15 +30,30 @@ jobs:
       - name: Run scraper
         run: python -m src.scraper
 
+      # 调试：列出生成的文件，确保路径正确
       - name: List generated files
         run: |
+          echo "PWD = $(pwd)"
           ls -lah
           ls -lah data || true
           ls -lah data/output || true
 
+      # 把 Excel 作为 Artifact 上传，方便在运行页面直接下载
       - name: Upload Excel as artifact
         uses: actions/upload-artifact@v4
         with:
           name: queens_dev_news.xlsx
-          path: data/output/queens_dev_
+          path: data/output/queens_dev_news.xlsx
+          if-no-files-found: warn
+
+      # 提交到仓库
+      - name: Commit updated Excel
+        run: |
+          git status
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data
+          git commit -m "auto update queens news $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes to commit"
+          git push
+
 
