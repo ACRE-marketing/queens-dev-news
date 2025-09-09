@@ -174,7 +174,91 @@ def filter_items(items):
 
 def main():
     seen = load_seen()
-    rows = []
+    rows = []  # ✅ 确保 rows 在 main() 一开始就定义
+
+    # --- RSS 源 ---
+    for src in SOURCES.get("rss_sources", []):
+        try:
+            items = parse_rss(src["url"])
+            for it in items[:80]:
+                it["source"] = src["source"]
+                it["feed_name"] = src["name"]
+                if it["url"] in seen:
+                    continue
+                it = enrich_article(it)
+                if filter_items([it]):
+                    seen.add(it["url"])
+                    rows.append(it)
+            # ✅ 循环末尾：统计打印（一定要保持这个缩进级别）
+            print(f"[RSS DONE] {src['name']} -> kept so far: {len(rows)}")
+            time.sleep(1.0)
+        except Exception:
+            print(f"[RSS ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+
+    # --- HTML 源 ---
+    for src in SOURCES.get("html_sources", []):
+        try:
+            items = parse_html_list(
+                src["url"], src.get("list_selector"), src.get("title_selector"),
+                src.get("link_selector"), src.get("date_selector"), src.get("summary_selector")
+            )
+            for it in items[:80]:
+                it["source"] = src["source"]
+                it["feed_name"] = src["name"]
+                if it["url"] in seen:
+                    continue
+                it = enrich_article(it)
+                if filter_items([it]):
+                    seen.add(it["url"])
+                    rows.append(it)
+            # ✅ 循环末尾：统计打印
+            print(f"[HTML DONE] {src['name']} -> kept so far: {len(rows)}")
+            time.sleep(1.0)
+        except Exception:
+            print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+
+    # ✅ 总结打印
+    print(f"[TOTAL] kept rows: {len(rows)}")
+
+    # --- 汇总输出 ---
+    if rows:
+        df = pd.DataFrame(rows)
+    else:
+        df = pd.DataFrame(columns=[
+            "title","url","summary","published","raw_date","source","feed_name","content_preview"
+        ])
+
+    # 只保留最近 7 天
+    now = datetime.now()
+    def fresh(d):
+        if d is None or pd.isna(d):
+            return True
+        try:
+            return (pd.to_datetime(d) >= now - pd.Timedelta(days=7))
+        except Exception:
+            return True
+
+    if "published" in df.columns and not df.empty:
+        df = df[df["published"].apply(fresh)]
+    if "published" in df.columns:
+        df = df.sort_values(by="published", ascending=False, na_position="last")
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+    df_out = df.copy()
+    df_out.rename(columns={
+        "title": "Title",
+        "url": "URL",
+        "summary": "Summary",
+        "published": "Published",
+        "source": "Source",
+        "feed_name": "Feed"
+    }, inplace=True)
+    df_out["Published"] = df_out["Published"].apply(lambda x: to_iso(x))
+    df_out.to_excel(EXCEL_PATH, index=False)
+
+    save_seen(seen)
+    print(f"Saved {len(df_out)} rows to {EXCEL_PATH}")
+
 
 # --- RSS 源 ---
 for src in SOURCES.get("rss_sources", []):
