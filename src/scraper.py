@@ -176,7 +176,7 @@ def main():
     seen = load_seen()
     rows = []
 
-  # --- RSS 源 ---
+# --- RSS 源 ---
 for src in SOURCES.get("rss_sources", []):
     try:
         items = parse_rss(src["url"])
@@ -198,7 +198,7 @@ for src in SOURCES.get("rss_sources", []):
         print(f"[RSS ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
 
 
-   # --- HTML 源 ---
+  # --- HTML 源 ---
 for src in SOURCES.get("html_sources", []):
     try:
         items = parse_html_list(
@@ -221,6 +221,7 @@ for src in SOURCES.get("html_sources", []):
         time.sleep(1.0)
     except Exception:
         print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+
 
     if rows:
         df = pd.DataFrame(rows)
