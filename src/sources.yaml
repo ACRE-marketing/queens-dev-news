@@ -1,5 +1,4 @@
 rss_sources:
-  # YIMBY（Queens 常见社区 RSS；可按需增删）
   - name: "YIMBY - Long Island City"
     url: "https://newyorkyimby.com/neighborhoods/long-island-city/feed"
     source: "YIMBY"
@@ -15,9 +14,23 @@ rss_sources:
   - name: "YIMBY - Ridgewood"
     url: "https://newyorkyimby.com/neighborhoods/ridgewood/feed"
     source: "YIMBY"
+  - name: "YIMBY - Sunnyside"
+    url: "https://newyorkyimby.com/neighborhoods/sunnyside/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Woodside"
+    url: "https://newyorkyimby.com/neighborhoods/woodside/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Rego Park"
+    url: "https://newyorkyimby.com/neighborhoods/rego-park/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Forest Hills"
+    url: "https://newyorkyimby.com/neighborhoods/forest-hills/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Rockaway"
+    url: "https://newyorkyimby.com/neighborhoods/rockaway-peninsula/feed"
+    source: "YIMBY"
 
 html_sources:
-  # The Real Deal: 纽约频道（HTML 抓列表）
   - name: "TRD - New York"
     url: "https://therealdeal.com/new-york/"
     source: "TRD"
@@ -27,7 +40,6 @@ html_sources:
     date_selector: "time"
     summary_selector: "p"
 
-  # Commercial Observer: 首页（可追加 Development、Finance 栏）
   - name: "Commercial Observer - Home"
     url: "https://commercialobserver.com/"
     source: "Commercial Observer"
@@ -37,7 +49,6 @@ html_sources:
     date_selector: "time"
     summary_selector: "p"
 
-  # PincusCo：首页
   - name: "PincusCo - Home"
     url: "https://www.pincusco.com/"
     source: "PincusCo"
@@ -47,7 +58,6 @@ html_sources:
     date_selector: "time, .date"
     summary_selector: "p"
 
-  # CityRealty：市场洞察频道
   - name: "CityRealty - Market Insight"
     url: "https://www.cityrealty.com/nyc/market-insight"
     source: "CityRealty"
@@ -56,3 +66,10 @@ html_sources:
     link_selector: "a"
     date_selector: "time, .date"
     summary_selector: "p, .summary"
+
+
+
+
+
+
+
