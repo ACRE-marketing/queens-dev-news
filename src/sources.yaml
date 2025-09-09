@@ -1,0 +1,58 @@
+rss_sources:
+  # YIMBY（Queens 常见社区 RSS；可按需增删）
+  - name: "YIMBY - Long Island City"
+    url: "https://newyorkyimby.com/neighborhoods/long-island-city/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Astoria"
+    url: "https://newyorkyimby.com/neighborhoods/astoria/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Flushing"
+    url: "https://newyorkyimby.com/neighborhoods/flushing/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Jamaica"
+    url: "https://newyorkyimby.com/neighborhoods/jamaica/feed"
+    source: "YIMBY"
+  - name: "YIMBY - Ridgewood"
+    url: "https://newyorkyimby.com/neighborhoods/ridgewood/feed"
+    source: "YIMBY"
+
+html_sources:
+  # The Real Deal: 纽约频道（HTML 抓列表）
+  - name: "TRD - New York"
+    url: "https://therealdeal.com/new-york/"
+    source: "TRD"
+    list_selector: "article"
+    title_selector: "h2, h3, a"
+    link_selector: "a"
+    date_selector: "time"
+    summary_selector: "p"
+
+  # Commercial Observer: 首页（可追加 Development、Finance 栏）
+  - name: "Commercial Observer - Home"
+    url: "https://commercialobserver.com/"
+    source: "Commercial Observer"
+    list_selector: "article"
+    title_selector: "h2, h3, a"
+    link_selector: "a"
+    date_selector: "time"
+    summary_selector: "p"
+
+  # PincusCo：首页
+  - name: "PincusCo - Home"
+    url: "https://www.pincusco.com/"
+    source: "PincusCo"
+    list_selector: "article, .entry, .post, .card"
+    title_selector: "h2, h3, a"
+    link_selector: "a"
+    date_selector: "time, .date"
+    summary_selector: "p"
+
+  # CityRealty：市场洞察频道
+  - name: "CityRealty - Market Insight"
+    url: "https://www.cityrealty.com/nyc/market-insight"
+    source: "CityRealty"
+    list_selector: "article, .article-item, .news-item"
+    title_selector: "h2, h3, a"
+    link_selector: "a"
+    date_selector: "time, .date"
+    summary_selector: "p, .summary"
