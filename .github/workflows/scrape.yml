@@ -1,28 +1,26 @@
 name: scrape-queens-dev-news
 
 on:
+  workflow_dispatch:        # 手动运行按钮
   schedule:
-    - cron: "10 12 * * *"
-  workflow_dispatch:
+    - cron: '10 12 * * *'   # 每天 12:10 UTC ≈ 纽约早上 8:10
 
-# 👇 给 GITHUB_TOKEN 开“写入代码仓库”的权限
 permissions:
-  contents: write
+  contents: write           # 允许推送到仓库
 
 jobs:
-  run:
+  scrape:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # 默认就用 GITHUB_TOKEN；显式写出来更清晰
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -30,22 +28,17 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run scraper
-        run: |
-          python -m src.scraper
-          
-      - name: Upload Excel as artifact
-       uses: actions/upload-artifact@v4
-       with:
-         name: queens_dev_news.xlsx
-         path: data/output/queens_dev_news.xlsx
-         if-no-files-found: warn
+        run: python -m src.scraper
 
-      - name: Commit updated Excel
+      - name: List generated files
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase
-          git add data/output/queens_dev_news.xlsx data/seen_urls.csv || true
-          git commit -m "auto update queens news" || echo "No changes to commit"
-          git push
+          ls -lah
+          ls -lah data || true
+          ls -lah data/output || true
+
+      - name: Upload Excel as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: queens_dev_news.xlsx
+          path: data/output/queens_dev_
 
