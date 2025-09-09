@@ -129,60 +129,98 @@ def enrich_article(article):
     return article
 
 def filter_items(items):
+    """
+    规则调整：
+    1) 如果是 YIMBY 且 feed 名称就是 Queens 的具体社区（Astoria/LIC/Flushing/Jamaica 等），
+       则不再强制要求出现 'queens/astoria/…' 这些地名，只要命中 must_have_any 即可。
+    2) 其他源仍要求：同时命中 borough + must_have_any。
+    """
+    QUEENS_FEED_HINTS = {
+        "long island city", "lic", "astoria", "flushing", "jamaica",
+        "ridgewood", "sunnyside", "woodside", "rego park", "forest hills",
+        "kew gardens", "bayside", "whitestone", "college point",
+        "maspeth", "elmhurst", "jackson heights", "corona",
+        "rockaway", "far rockaway", "howard beach", "middle village", "ozone park"
+    }
+
     filtered = []
     for it in items:
         text_blob = " ".join([
             it.get("title") or "",
             it.get("summary") or "",
             it.get("content_preview") or ""
-        ])
-        if not contains_borough(text_blob, BOROUGHS):
-            continue
-        if not contains_keywords(text_blob, MUST_ANY):
-            continue
-        filtered.append(it)
+        ]).lower()
+
+        source = (it.get("source") or "").lower()
+        feed_name = (it.get("feed_name") or "").lower()
+
+        is_yimby_queens_feed = (
+            source == "yimby" and any(h in feed_name for h in QUEENS_FEED_HINTS)
+        )
+
+        has_borough = contains_borough(text_blob, BOROUGHS)
+        has_keyword = contains_keywords(text_blob, MUST_ANY)
+
+        if is_yimby_queens_feed:
+            # YIMBY 的 Queens 子频道：只要命中关键词即可
+            if has_keyword:
+                filtered.append(it)
+        else:
+            # 其他源：地名 + 关键词都要
+            if has_borough and has_keyword:
+                filtered.append(it)
     return filtered
+
 
 def main():
     seen = load_seen()
     rows = []
 
-    # RSS
-    for src in SOURCES.get("rss_sources", []):
-        try:
-            items = parse_rss(src["url"])
-            for it in items[:80]:
-                it["source"] = src["source"]
-                it["feed_name"] = src["name"]
-                if it["url"] in seen:
-                    continue
-                it = enrich_article(it)
-                if filter_items([it]):
-                    seen.add(it["url"])
-                    rows.append(it)
-            time.sleep(1.0)
-        except Exception:
-            print(f"[RSS ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+  # --- RSS 源 ---
+for src in SOURCES.get("rss_sources", []):
+    try:
+        items = parse_rss(src["url"])
+        for it in items[:80]:
+            it["source"] = src["source"]
+            it["feed_name"] = src["name"]
+            if it["url"] in seen:
+                continue
+            it = enrich_article(it)
+            if filter_items([it]):
+                seen.add(it["url"])
+                rows.append(it)
 
-    # HTML
-    for src in SOURCES.get("html_sources", []):
-        try:
-            items = parse_html_list(
-                src["url"], src.get("list_selector"), src.get("title_selector"),
-                src.get("link_selector"), src.get("date_selector"), src.get("summary_selector")
-            )
-            for it in items[:80]:
-                it["source"] = src["source"]
-                it["feed_name"] = src["name"]
-                if it["url"] in seen:
-                    continue
-                it = enrich_article(it)
-                if filter_items([it]):
-                    seen.add(it["url"])
-                    rows.append(it)
-            time.sleep(1.0)
-        except Exception:
-            print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+        # ✅ 这里是“循环末尾”的统计输出（放在 try 里更稳）
+        print(f"[RSS DONE] {src['name']} -> kept so far: {len(rows)}")
+
+        time.sleep(1.0)
+    except Exception:
+        print(f"[RSS ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
+
+
+   # --- HTML 源 ---
+for src in SOURCES.get("html_sources", []):
+    try:
+        items = parse_html_list(
+            src["url"], src.get("list_selector"), src.get("title_selector"),
+            src.get("link_selector"), src.get("date_selector"), src.get("summary_selector")
+        )
+        for it in items[:80]:
+            it["source"] = src["source"]
+            it["feed_name"] = src["name"]
+            if it["url"] in seen:
+                continue
+            it = enrich_article(it)
+            if filter_items([it]):
+                seen.add(it["url"])
+                rows.append(it)
+
+        # ✅ 这里是“循环末尾”的统计输出
+        print(f"[HTML DONE] {src['name']} -> kept so far: {len(rows)}")
+
+        time.sleep(1.0)
+    except Exception:
+        print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
 
     if rows:
         df = pd.DataFrame(rows)
