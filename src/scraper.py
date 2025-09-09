@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 
-# ✅ 注意这里：从 src.utils 引入，而不是 utils
+# 从 src.utils 引入工具函数
 from src.utils import (
     norm_text,
     parse_date,
@@ -24,9 +24,9 @@ EXCEL_PATH = os.path.join(OUT_DIR, "queens_dev_news.xlsx")
 os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
+# 读取配置
 with open(os.path.join(ROOT, "src", "sources.yaml"), "r", encoding="utf-8") as f:
     SOURCES = yaml.safe_load(f)
-
 with open(os.path.join(ROOT, "src", "keywords.yaml"), "r", encoding="utf-8") as f:
     KW = yaml.safe_load(f)
 
@@ -81,6 +81,7 @@ def parse_html_list(page_url, list_sel, title_sel, link_sel, date_sel, summary_s
     blocks = soup.select(list_sel) if list_sel else soup.find_all("article")
     items = []
     for b in blocks:
+        # title
         title_el = None
         for sel in (title_sel or "").split(","):
             sel = sel.strip()
@@ -91,6 +92,7 @@ def parse_html_list(page_url, list_sel, title_sel, link_sel, date_sel, summary_s
             continue
         title = norm_text(title_el.get_text())
 
+        # link
         link_el = b.select_one(link_sel) if link_sel else title_el
         href = link_el.get("href") if link_el else None
         if href and not href.startswith("http"):
@@ -98,6 +100,7 @@ def parse_html_list(page_url, list_sel, title_sel, link_sel, date_sel, summary_s
         if not looks_like_article_link(href):
             continue
 
+        # date
         dt_txt = None
         if date_sel:
             d_el = b.select_one(date_sel)
@@ -105,6 +108,7 @@ def parse_html_list(page_url, list_sel, title_sel, link_sel, date_sel, summary_s
                 dt_txt = norm_text(d_el.get("datetime") or d_el.get_text())
         dt = parse_date(dt_txt)
 
+        # summary
         summ = None
         if summary_sel:
             s_el = b.select_one(summary_sel)
@@ -117,6 +121,7 @@ def parse_html_list(page_url, list_sel, title_sel, link_sel, date_sel, summary_s
     return items
 
 def enrich_article(article):
+    """补抓正文首段，提升关键词匹配成功率（轻量请求）。"""
     try:
         r = fetch_url(article["url"])
         soup = BeautifulSoup(r.text, "html.parser")
@@ -130,10 +135,9 @@ def enrich_article(article):
 
 def filter_items(items):
     """
-    规则调整：
-    1) 如果是 YIMBY 且 feed 名称就是 Queens 的具体社区（Astoria/LIC/Flushing/Jamaica 等），
-       则不再强制要求出现 'queens/astoria/…' 这些地名，只要命中 must_have_any 即可。
-    2) 其他源仍要求：同时命中 borough + must_have_any。
+    放宽规则：
+    - YIMBY 的 Queens 子频道（feed 名字包含 Queens 各社区）只需命中关键词即可；
+    - 其他源仍需 地名 + 关键词。
     """
     QUEENS_FEED_HINTS = {
         "long island city", "lic", "astoria", "flushing", "jamaica",
@@ -162,19 +166,16 @@ def filter_items(items):
         has_keyword = contains_keywords(text_blob, MUST_ANY)
 
         if is_yimby_queens_feed:
-            # YIMBY 的 Queens 子频道：只要命中关键词即可
             if has_keyword:
                 filtered.append(it)
         else:
-            # 其他源：地名 + 关键词都要
             if has_borough and has_keyword:
                 filtered.append(it)
     return filtered
 
-
 def main():
     seen = load_seen()
-    rows = []  # ✅ 确保 rows 在 main() 一开始就定义
+    rows = []  # 保证 rows 在 main() 顶部定义
 
     # --- RSS 源 ---
     for src in SOURCES.get("rss_sources", []):
@@ -189,7 +190,6 @@ def main():
                 if filter_items([it]):
                     seen.add(it["url"])
                     rows.append(it)
-            # ✅ 循环末尾：统计打印（一定要保持这个缩进级别）
             print(f"[RSS DONE] {src['name']} -> kept so far: {len(rows)}")
             time.sleep(1.0)
         except Exception:
@@ -211,13 +211,11 @@ def main():
                 if filter_items([it]):
                     seen.add(it["url"])
                     rows.append(it)
-            # ✅ 循环末尾：统计打印
             print(f"[HTML DONE] {src['name']} -> kept so far: {len(rows)}")
             time.sleep(1.0)
         except Exception:
             print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
 
-    # ✅ 总结打印
     print(f"[TOTAL] kept rows: {len(rows)}")
 
     # --- 汇总输出 ---
@@ -228,7 +226,7 @@ def main():
             "title","url","summary","published","raw_date","source","feed_name","content_preview"
         ])
 
-    # 只保留最近 7 天
+    # 最近 7 天
     now = datetime.now()
     def fresh(d):
         if d is None or pd.isna(d):
@@ -259,91 +257,6 @@ def main():
     save_seen(seen)
     print(f"Saved {len(df_out)} rows to {EXCEL_PATH}")
 
-
-# --- RSS 源 ---
-for src in SOURCES.get("rss_sources", []):
-    try:
-        items = parse_rss(src["url"])
-        for it in items[:80]:
-            it["source"] = src["source"]
-            it["feed_name"] = src["name"]
-            if it["url"] in seen:
-                continue
-            it = enrich_article(it)
-            if filter_items([it]):
-                seen.add(it["url"])
-                rows.append(it)
-
-        # ✅ 这里是“循环末尾”的统计输出（放在 try 里更稳）
-        print(f"[RSS DONE] {src['name']} -> kept so far: {len(rows)}")
-
-        time.sleep(1.0)
-    except Exception:
-        print(f"[RSS ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
-
-
-  # --- HTML 源 ---
-for src in SOURCES.get("html_sources", []):
-    try:
-        items = parse_html_list(
-            src["url"], src.get("list_selector"), src.get("title_selector"),
-            src.get("link_selector"), src.get("date_selector"), src.get("summary_selector")
-        )
-        for it in items[:80]:
-            it["source"] = src["source"]
-            it["feed_name"] = src["name"]
-            if it["url"] in seen:
-                continue
-            it = enrich_article(it)
-            if filter_items([it]):
-                seen.add(it["url"])
-                rows.append(it)
-
-        # ✅ 这里是“循环末尾”的统计输出
-        print(f"[HTML DONE] {src['name']} -> kept so far: {len(rows)}")
-
-        time.sleep(1.0)
-    except Exception:
-        print(f"[HTML ERROR] {src['name']}: {traceback.format_exc()}", file=sys.stderr)
-
-
-    if rows:
-        df = pd.DataFrame(rows)
-    else:
-        df = pd.DataFrame(columns=["title","url","summary","published","raw_date","source","feed_name","content_preview"])
-
-    # 只保留最近 7 天
-    now = datetime.now()
-    def fresh(d):
-        if d is None or pd.isna(d):
-            return True
-        try:
-            return (pd.to_datetime(d) >= now - pd.Timedelta(days=7))
-        except Exception:
-            return True
-
-    if "published" in df.columns and not df.empty:
-        df = df[df["published"].apply(fresh)]
-
-    if "published" in df.columns:
-        df = df.sort_values(by="published", ascending=False, na_position="last")
-
-    os.makedirs(OUT_DIR, exist_ok=True)
-    df_out = df.copy()
-    df_out.rename(columns={
-        "title": "Title",
-        "url": "URL",
-        "summary": "Summary",
-        "published": "Published",
-        "source": "Source",
-        "feed_name": "Feed"
-    }, inplace=True)
-    df_out["Published"] = df_out["Published"].apply(lambda x: to_iso(x))
-    out_path = EXCEL_PATH
-    df_out.to_excel(out_path, index=False)
-
-    save_seen(seen)
-    print(f"Saved {len(df_out)} rows to {out_path}")
-
 if __name__ == "__main__":
     main()
+
