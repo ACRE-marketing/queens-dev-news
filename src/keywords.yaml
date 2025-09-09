@@ -23,18 +23,33 @@ must_have_any:
   - permit
   - permits
   - "new permit filed"
+  - "permit filed"
   - dob
   - developer
   - acquisition
   - acquires
+  - acquire
   - buys
   - purchase
+  - purchasing
   - financing
+  - finance
+  - "construction loan"
   - refinance
+  - mezzanine
   - groundbreak
   - groundbreaking
+  - "under construction"
   - construction start
-  - file plans
-  - filed plans
-  - zoning approval
-  - land purchase
+  - "file plans"
+  - "filed plans"
+  - "zoning approval"
+  - "rezoning"
+  - ulurp
+  - "land purchase"
+  - "site purchase"
+  - "ground lease"
+  - "air rights"
+  - "topped out"
+  - "foundation work"
+
