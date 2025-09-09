@@ -32,6 +32,13 @@ jobs:
       - name: Run scraper
         run: |
           python -m src.scraper
+          
+      - name: Upload Excel as artifact
+       uses: actions/upload-artifact@v4
+       with:
+         name: queens_dev_news.xlsx
+         path: data/output/queens_dev_news.xlsx
+         if-no-files-found: warn
 
       - name: Commit updated Excel
         run: |
