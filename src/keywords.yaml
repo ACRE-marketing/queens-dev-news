@@ -1,0 +1,40 @@
+boroughs:
+  - queens
+  - long island city
+  - lic
+  - astoria
+  - flushing
+  - jamaica
+  - ridgewood
+  - sunnyside
+  - woodside
+  - jackson heights
+  - elmhurst
+  - corona
+  - forest hills
+  - kew gardens
+  - bayside
+  - whitestone
+  - college point
+  - fresh meadows
+  
+
+must_have_any:
+  - permit
+  - permits
+  - "new permit filed"
+  - dob
+  - developer
+  - acquisition
+  - acquires
+  - buys
+  - purchase
+  - financing
+  - refinance
+  - groundbreak
+  - groundbreaking
+  - construction start
+  - file plans
+  - filed plans
+  - zoning approval
+  - land purchase
